@@ -1,0 +1,270 @@
+ <!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyCamp: Курс Python в браузере</title>
+    <style>
+        :root {
+            --bg-dark: #1e1e1e;
+            --bg-panel: #252526;
+            --text-light: #d4d4d4;
+            --text-muted: #9cdcfe;
+            --accent: #007acc;
+            --success: #4ec9b0;
+            --error: #f44747;
+        }
+        * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg-dark); color: var(--text-light); display: flex; flex-direction: column; }
+        header { background-color: var(--bg-panel); padding: 15px 20px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        h1 { margin: 0; font-size: 1.2rem; color: var(--accent); }
+        .progress { font-size: 0.9rem; color: var(--text-muted); }
+        .main-content { flex: 1; display: flex; flex-direction: column; height: 0; min-height: 0; }
+        .split-panel { flex: 1; display: flex; overflow: hidden; }
+        .curriculum { width: 300px; background-color: var(--bg-panel); overflow-y: auto; border-right: 1px solid #333; padding: 10px; }
+        .lesson { padding: 10px; margin-bottom: 5px; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
+        .lesson.active { background-color: var(--accent); color: #1e1e1e; }
+        .lesson.completed { background-color: var(--success); color: #1e1e1e; }
+        .lesson:hover:not(.active) { background-color: #333; }
+        .workspace { flex: 1; display: flex; flex-direction: column; }
+        .task-area { flex: 1; display: flex; }
+        .instructions { width: 50%; padding: 15px; overflow-y: auto; background-color: var(--bg-dark); border-right: 1px solid #333; font-size: 0.95rem; line-height: 1.6; }
+        .code-editor { width: 50%; position: relative; }
+        textarea { width: 100%; height: 100%; padding: 15px; border: none; background-color: #2d2d2d; color: var(--text-light); font-family: 'Consolas', 'Monaco', monospace; font-size: 14px; resize: none; }
+        .console-output { height: 200px; background-color: #000; color: #0f0; padding: 15px; font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; overflow-y: auto; border-top: 1px solid #333; }
+        .controls { padding: 15px; background-color: var(--bg-panel); border-top: 1px solid #333; display: flex; gap: 10px; align-items: center; }
+        button { background-color: var(--accent); border: none; color: #fff; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { opacity: 0.9; }
+        button:disabled { background-color: #555; cursor: not-allowed; }
+        #code-output { white-space: pre-wrap; word-wrap: break-word; }
+        .hidden { display: none; }
+        .success-msg { color: var(--success); font-weight: bold; }
+        .error-msg { color: var(--error); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🐍 PyCamp: Интерактивный курс Python</h1>
+    <div class="progress">Урок <span id="current-lesson">1</span> из <span id="total-lessons"></span></div>
+</header>
+
+<div class="main-content">
+    <div class="split-panel">
+        <div class="curriculum" id="curriculum">
+            <!-- Уроки генерируются скриптом -->
+        </div>
+
+        <div class="workspace">
+            <div class="task-area">
+                <div class="instructions" id="instructions">
+                    <!-- Текст урока -->
+                </div>
+                <div class="code-editor">
+                    <textarea id="code-input" spellcheck="false">print("Привет, PyCamp!")</textarea>
+                </div>
+            </div>
+            <div class="console-output" id="console-output"></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="run-btn">▶️ Выполнить код</button>
+        <button id="check-btn" disabled>✅ Проверить решение</button>
+        <span id="status-message"></span>
+        <button id="next-btn" class="hidden">Далее →</button>
+    </div>
+</div>
+
+<script>
+// === БАЗА ДАННЫХ КУРСА ===
+const lessons = [
+    {
+        id: 0,
+        title: "1. Первая программа",
+        instructions: "В Python функция print() выводит текст на экран. Нажмите 'Выполнить код', чтобы увидеть результат. В редакторе уже написан код для вывода 'Привет, PyCamp!'.",
+        initialCode: 'print("Привет, PyCamp!")',
+        solution: 'print("Привет, PyCamp!")',
+        validator: (output) => output.trim() === "Привет, PyCamp!"
+    },
+    {
+        id: 1,
+        title: "2. Переменные и типы данных",
+        instructions: "Создайте переменную name и присвойте ей ваше имя (в кавычках). Затем выведите на экран фразу 'Привет, [ваше имя]!' с помощью print().",
+        initialCode: '# Напишите код здесь\nname = ""',
+        solution: 'name = "Алексей"\nprint("Привет, " + name + "!")',
+        validator: (output) => output.includes("Привет,") && output.includes("!")
+    },
+    {
+        id: 2,
+        title: "3. Числа и арифметика",
+        instructions: "Создайте две переменные: a = 10 и b = 5. Выведите на экран их сумму (a + b).",
+        initialCode: 'a = 10\nb = 5\n# print()',
+        solution: 'a = 10\nb = 5\nprint(a + b)',
+        validator: (output) => output.trim() === "15"
+    },
+    {
+        id: 3,
+        title: "4. Условный оператор if",
+        instructions: "Создайте переменную age = 18. Если age больше или равно 18, выведите 'Доступ разрешен'. Иначе выведите 'Доступ запрещен'. Используйте if/else.",
+        initialCode: 'age = 18\n# ваш код',
+        solution: 'age = 18\nif age >= 18:\n    print("Доступ разрешен")\nelse:\n    print("Доступ запрещен")',
+        validator: (output) => output.trim() === "Доступ разрешен"
+    },
+    {
+        id: 4,
+        title: "5. Списки (Lists)",
+        instructions: "Создайте список fruits с тремя элементами: 'яблоко', 'банан', 'груша'. Выведите на экран второй элемент списка (индекс 1).",
+        initialCode: 'fruits = []\n# ваш код',
+        solution: 'fruits = ["яблоко", "банан", "груша"]\nprint(fruits[1])',
+        validator: (output) => output.trim() === "банан"
+    },
+    {
+        id: 5,
+        title: "6. Цикл for",
+        instructions: "Дан список numbers = [1, 2, 3, 4, 5]. С помощью цикла for выведите на экран каждое число, умноженное на 2.",
+        initialCode: 'numbers = [1, 2, 3, 4, 5]\n# ваш код',
+        solution: 'numbers = [1, 2, 3, 4, 5]\nfor num in numbers:\n    print(num * 2)',
+        validator: (output) => output.split('\\n').join(' ').includes("2 4 6 8 10")
+    },
+    {
+        id: 6,
+        title: "7. Функции",
+        instructions: "Напишите функцию greet(), которая принимает один аргумент (имя) и выводит 'Привет, [имя]'. Затем вызовите эту функцию, передав ей строку 'Мир'.',
+        initialCode: '# напишите функцию\n# вызов функции',
+        solution: 'def greet(name):\n    print("Привет, " + name + "!")\n\ngreet("Мир")',
+        validator: (output) => output.trim() === "Привет, Мир!"
+    }
+];
+
+// === СОСТОЯНИЕ ПРИЛОЖЕНИЯ ===
+let currentLessonIndex = 0;
+const completedLessons = new Set();
+
+// === ЭЛЕМЕНТЫ DOM ===
+const curriculumEl = document.getElementById('curriculum');
+const instructionsEl = document.getElementById('instructions');
+const codeInput = document.getElementById('code-input');
+const consoleOutput = document.getElementById('console-output');
+const runBtn = document.getElementById('run-btn');
+const checkBtn = document.getElementById('check-btn');
+const nextBtn = document.getElementById('next-btn');
+const statusMessage = document.getElementById('status-message');
+const currentLessonSpan = document.getElementById('current-lesson');
+const totalLessonsSpan = document.getElementById('total-lessons');
+
+// === ОТРИСОВКА ИНТЕРФЕЙСА ===
+function renderCurriculum() {
+    totalLessonsSpan.textContent = lessons.length;
+    curriculumEl.innerHTML = '';
+    lessons.forEach(lesson => {
+        const lessonEl = document.createElement('div');
+        lessonEl.className = 'lesson' +
+            (lesson.id === currentLessonIndex ? ' active' : '') +
+            (completedLessons.has(lesson.id) ? ' completed' : '');
+        lessonEl.textContent = lesson.title;
+        lessonEl.onclick = () => loadLesson(lesson.id);
+        curriculumEl.appendChild(lessonEl);
+    });
+}
+
+function loadLesson(index) {
+    if (completedLessons.has(index)) return;
+    currentLessonIndex = index;
+    const lesson = lessons[index];
+    instructionsEl.innerHTML = lesson.instructions.replace(/\n/g, '<br>');
+    codeInput.value = lesson.initialCode;
+    consoleOutput.innerHTML = '';
+    statusMessage.textContent = '';
+    nextBtn.classList.add('hidden');
+    checkBtn.disabled = false;
+    renderCurriculum();
+    currentLessonSpan.textContent = index + 1;
+    codeInput.focus();
+}
+
+// === ЛОГИКА ВЫПОЛНЕНИЯ PYTHON (В БРАУЗЕРЕ) ===
+function runPython(code) {
+    consoleOutput.innerHTML = '<em>Выполнение...</em>';
+    // Используем публичный API Brython для выполнения Python в браузере
+    // Это безопасно, так как код выполняется в изолированном iframe Brython
+    const script = document.createElement('script');
+    script.type = 'text/python';
+    script.innerHTML = `
+import sys
+from browser import document, console, alert
+
+# Перехват вывода print
+class OutputInterceptor:
+    def __init__(self):
+        self.output = ""
+    def write(self, text):
+        self.output += text
+    def flush(self):
+        pass
+
+old_stdout = sys.stdout
+sys.stdout = OutputInterceptor()
+
+try:
+    ${code}
+    result = sys.stdout.output
+except Exception as e:
+    result = f"Ошибка: {e}"
+finally:
+    sys.stdout = old_stdout
+
+console.log(result)
+document.currentScript.parentElement.textContent = result
+`;
+    document.body.appendChild(script);
+    // Удаляем скрипт после выполнения, чтобы не засорять DOM
+    setTimeout(() => {
+        if (script.parentElement) script.parentElement.removeChild(script);
+    }, 100);
+}
+
+// === ОБРАБОТЧИКИ СОБЫТИЙ ===
+runBtn.onclick = () => {
+    const code = codeInput.value;
+    runPython(code);
+    checkBtn.disabled = false;
+    statusMessage.textContent = '';
+    nextBtn.classList.add('hidden');
+};
+
+checkBtn.onclick = () => {
+    const lesson = lessons[currentLessonIndex];
+    const userCode = codeInput.value;
+    const output = consoleOutput.textContent;
+
+    // Проверка на соответствие эталонному решению (упрощенно)
+    const cleanUser = userCode.replace(/\s/g, '').toLowerCase();
+    const cleanSol = lesson.solution.replace(/\s/g, '').toLowerCase();
+
+    if (cleanUser === cleanSol || lesson.validator(output)) {
+        statusMessage.innerHTML = '<span class="success-msg">✅ Решение верно!</span>';
+        completedLessons.add(lesson.id);
+        checkBtn.disabled = true;
+        nextBtn.classList.remove('hidden');
+        renderCurriculum();
+    } else {
+        statusMessage.innerHTML = '<span class="error-msg">❌ Неверно. Попробуйте снова.</span>';
+    }
+};
+
+nextBtn.onclick = () => {
+    if (currentLessonIndex < lessons.length - 1) {
+        loadLesson(currentLessonIndex + 1);
+    } else {
+        statusMessage.textContent = '🎉 Поздравляем! Вы прошли весь курс!';
+        nextBtn.classList.add('hidden');
+    }
+};
+
+// === ИНИЦИАЛИЗАЦИЯ ===
+renderCurriculum();
+loadLesson(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Навигация</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.8rem;
+            color: #ffffff;
+        }
+
+        nav {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        nav a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: #16213e;
+            border: 1px solid #0f3460;
+            border-radius: 10px;
+            color: #e0e0e0;
+            text-decoration: none;
+            font-size: 1.1rem;
+            transition: all 0.2s ease;
+        }
+
+        nav a:hover {
+            background: #0f3460;
+            border-color: #e94560;
+            transform: translateX(6px);
+            color: #ffffff;
+        }
+
+        nav a .icon {
+            font-size: 1.4rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Chat Pages</h1>
+        <nav>
+            <a href="Qwen.html">
+                <span class="icon"></span>
+                Qwen
+            </a>
+            <a href="Qwen_web_dev.html">
+                <span class="icon"></span>
+                Qwen Web Dev
+            </a>
+            <a href="agent.html">
+                <span class="icon">📄</span>
+                Agent
+            </a>
+            <a href="gigachat.html">
+                <span class="icon">📄</span>
+                GigaChat
+            </a>
+        </nav>
+    </div>
+</body>
+</html>
+```
+
+Файл создаёт тёмную страницу-навигацию со ссылками на все 4 HTML-файла из репозитория. При наведении ссылки подсвечиваются и сдвигаются вправо. Просто положи этот `index.html` в корень репозитория рядом с остальными файлами.
